@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Vancouver Apartment Hunt</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: #f7f7f5;
+    color: #1f1f1f;
+    padding: 24px;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .subtitle { color: #666; font-size: 13px; margin-bottom: 16px; }
+  .criteria {
+    background: #fff; border: 1px solid #e4e2dd; border-radius: 10px;
+    padding: 14px 16px; margin-bottom: 16px; font-size: 13px; color: #333;
+  }
+  .criteria strong { color: #111; }
+  .chip {
+    display: inline-block; background: #eef2ff; color: #3949ab;
+    border-radius: 999px; padding: 2px 10px; font-size: 12px; margin: 2px 4px 2px 0;
+  }
+  .meta-row {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 8px; margin-bottom: 18px; font-size: 12px; color: #777;
+  }
+  .source-badges span { margin-right: 8px; }
+  .badge-live { color: #1a7f37; font-weight: 600; }
+  .badge-best-effort { color: #b06a00; font-weight: 600; }
+  .badge-off { color: #999; }
+  .refresh-note { font-size: 12px; color: #888; }
+  h2.section-title {
+    font-size: 15px; margin: 24px 0 10px; padding-bottom: 6px;
+    border-bottom: 2px solid #ddd; display: flex; align-items: center; gap: 8px;
+  }
+  .count-pill {
+    background: #111; color: #fff; border-radius: 999px; font-size: 11px;
+    padding: 1px 8px; font-weight: 600;
+  }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; }
+  .card {
+    background: #fff; border: 1px solid #e4e2dd; border-radius: 10px; overflow: hidden;
+    display: flex; flex-direction: column; transition: box-shadow .15s;
+  }
+  .card:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+  .card-photo-wrap { width: 100%; aspect-ratio: 4/3; background: #eee; overflow: hidden; position: relative; }
+  .card-photo-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .card-photo-wrap.no-photo { display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 11px; }
+  .card-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 6px; }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .price { font-size: 18px; font-weight: 700; color: #111; }
+  .tier-top { border-color: #ffd166; box-shadow: 0 0 0 1px #ffd166 inset; }
+  .tier-badge {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em;
+    padding: 2px 6px; border-radius: 4px; white-space: nowrap;
+  }
+  .tier-badge.top { background: #fff2cc; color: #8a6d00; }
+  .tier-badge.good { background: #e6f4ea; color: #1a7f37; }
+  .new-flag {
+    background: #d0f0dc; color: #0f6b32; font-size: 9.5px; font-weight: 700;
+    padding: 2px 6px; border-radius: 4px; letter-spacing: .03em;
+  }
+  .card-title { font-size: 13.5px; font-weight: 600; line-height: 1.3; }
+  .card-title a { color: #1a1a1a; text-decoration: none; }
+  .card-title a:hover { text-decoration: underline; }
+  .specs { font-size: 12.5px; color: #444; }
+  .addr { font-size: 11.5px; color: #888; }
+  .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+  .tag { font-size: 10.5px; padding: 2px 7px; border-radius: 999px; background: #f0efec; color: #555; }
+  .tag.pet { background: #e8f6ee; color: #1a7f37; }
+  .tag.den { background: #eef2ff; color: #3949ab; }
+  .tag.verify { background: #fff4e5; color: #9a5b00; }
+  .tag.warn { background: #fde8e8; color: #a02020; }
+  .card-footer {
+    display: flex; justify-content: space-between; align-items: center; margin-top: 4px;
+    font-size: 11px; color: #888;
+  }
+  .source-tag { font-weight: 600; }
+  details { background: #fff; border: 1px solid #e4e2dd; border-radius: 10px; margin-top: 22px; }
+  details summary {
+    padding: 12px 16px; cursor: pointer; font-size: 13.5px; font-weight: 600; color: #9a5b00;
+    list-style: none;
+  }
+  details summary::-webkit-details-marker { display: none; }
+  details .grid { padding: 0 14px 14px; }
+  footer { margin-top: 28px; font-size: 11.5px; color: #999; line-height: 1.6; }
+  .empty-note { font-size: 12.5px; color: #999; padding: 8px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Vancouver Apartment Hunt</h1>
+  <div class="subtitle">Kitsilano &middot; Point Grey &middot; Coal Harbour &mdash; 2km radius each</div>
+
+  <div class="criteria">
+    <strong>Filters:</strong>
+    <span class="chip">Max $5,500/mo</span>
+    <span class="chip">3BR/2BA or 2BR+Den</span>
+    <span class="chip">1,000+ sqft</span>
+    <span class="chip">Move-in ~Aug 1</span>
+    <span class="chip">1&ndash;2 parking</span>
+    <span class="chip">In-suite laundry</span>
+    <span class="chip">Storage</span>
+    <span class="chip">Unfurnished</span>
+    <span class="chip">Nice-to-have: pet friendly, 2+ stalls, good amenities/walkability</span>
+  </div>
+
+  <div class="meta-row">
+    <div class="source-badges">
+      <span class="badge-live">&#9679; Craigslist &mdash; live scan, full listing detail</span>
+      <span class="badge-live">&#9679; REW.ca &mdash; live scan</span>
+      <span class="badge-best-effort">&#9679; Zillow &mdash; best-effort</span>
+      <span class="badge-best-effort">&#9679; Apartments.com &mdash; best-effort</span>
+    </div>
+    <div class="refresh-note" id="scanned-note">Last scanned: just now</div>
+  </div>
+
+  <p class="empty-note" id="disclaimer">
+    Photos and details below are pulled directly from each listing page. Where a detail wasn't stated
+    it's marked "verify on listing." Click any photo or title to open the original post.
+  </p>
+
+  <h2 class="section-title">Top matches <span class="count-pill" id="count-top">0</span></h2>
+  <div class="grid" id="grid-top"></div>
+
+  <h2 class="section-title">Worth a look <span class="count-pill" id="count-good">0</span></h2>
+  <div class="grid" id="grid-good"></div>
+
+  <details>
+    <summary id="furnished-summary">Furnished / partially furnished (doesn't meet "unfurnished," shown in case it's negotiable)</summary>
+    <div class="grid" id="grid-furnished"></div>
+  </details>
+
+  <footer>
+    This dashboard is refreshed automatically every few hours while your Cowork app is open, and the same
+    data is published to the public GitHub Pages URL. Craigslist listing pages (with photos) and REW.ca are
+    scanned directly and reliably each cycle. Zillow and Apartments.com are heavily bot-protected, so those
+    checks are best-effort and may occasionally return nothing for a cycle. Bookmark this page and reopen
+    anytime &mdash; both of you can check it independently.
+  </footer>
+</div>
+
+<script>
+const listings = {
+  top: [
+    {
+      title: "3 Bed / 2 Bath + Den, 1,275 sqft — 1211 Melville, Coal Harbour (The Ritz, 16th fl)",
+      price: 4800, beds: "3 bd", baths: "2 ba", sqft: 1275, neighborhood: "Coal Harbour",
+      tags: ["Den"], verify: [], notes: "Parking: 1 stall included, Storage: included",
+      image: "https://images.craigslist.org/00B0B_42Ae9kuPoOM_0C60sw_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-br-ft2-c-3bed2b1den-on-the/2MM41PBHJzdGAsmivZA5AQ"
+    },
+    {
+      title: "2 Bed / 3 Bath + Den, 1,830 sqft — 1500 Alberni, Coal Harbour",
+      price: 4895, beds: "2 bd", baths: "3 ba", sqft: 1830, neighborhood: "Coal Harbour",
+      tags: ["Den"], verify: [], notes: "Parking: 3 stalls included, Storage: 1 locker included",
+      image: "https://images.craigslist.org/00303_dajvc8Mbhqk_0CI0pO_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-rare-over-sized-bd-den-bth/p7BV3B2FvvkkviYLcUbyJF"
+    },
+    {
+      title: "2 Bed / 2 Bath + Den, 1,200 sqft — Kits/Point Grey border, W 4th Ave",
+      price: 4750, beds: "2 bd", baths: "2 ba", sqft: 1200, neighborhood: "Kits / Point Grey border",
+      tags: ["Den", "Pet friendly"], verify: [], notes: "Unfurnished, Parking: 1 stall included, Storage: locker + 2 bike lockers included",
+      image: "https://images.craigslist.org/00X0X_2n9Eh5SSpLk_0co08g_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-few-blocks-from-the-beach/84KCDpVXW35YQUx2govDNW"
+    },
+    {
+      title: "The Grace — Townhouse, 3 Bed / 2 Bath, 1,192 sqft, Kitsilano",
+      price: 3995, beds: "3 bd", baths: "2 ba", sqft: 1192, neighborhood: "Kitsilano (W Broadway & Balaclava)",
+      tags: [], verify: [], notes: "Parking: attached garage + car-share membership, Storage: in-suite storage",
+      image: "https://images.craigslist.org/00M0M_dN1gmJ4wS1g_0uG0eH_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-the-grace-townhouse-3br-2ba/qx5zMzGRAFADXyndBWTmHG"
+    },
+    {
+      title: "2 Bed / 2 Bath + Den, 1,030 sqft — Coal Harbour",
+      price: 4100, beds: "2 bd", baths: "2 ba", sqft: 1030, neighborhood: "Coal Harbour",
+      tags: ["Den"], verify: ["storage not mentioned"], notes: "Unfurnished, Parking: 1 included (2nd stall negotiable, surcharge)",
+      image: "https://images.craigslist.org/00O0O_4yEbVG9xdDj_0oo0ww_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-bedroom-bathroom-den-in-coal/nc6vjn6BsYobcozuq9PUyg"
+    },
+    {
+      title: "3 Bed / 2 Bath + Den Laneway, 1,100 sqft — Point Grey (41st Ave near Highbury)",
+      price: 4680, beds: "3 bd", baths: "2 ba", sqft: 1100, neighborhood: "Point Grey",
+      tags: ["Den"], verify: ["storage not mentioned"], notes: "Parking: detached garage",
+      image: "https://images.craigslist.org/00h0h_j4T1PDmxibL_0CI0pQ_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-crafted-vancouver-west-1500sf/25L3Yn827CbGxiCFB7KQrV"
+    },
+    {
+      title: "3 Bed / 2 Bath, 1,020 sqft — UBC / Kitsilano, walk to campus",
+      price: 4800, beds: "3 bd", baths: "2 ba", sqft: 1020, neighborhood: "Kitsilano / UBC",
+      tags: [], verify: ["storage not mentioned", "confirm long-term lease available"], notes: "Parking: attached garage",
+      image: "https://images.craigslist.org/00t0t_fImiKFLxzw0_0CI0t2_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-ubc-bed-bath-walk-to-campus/29N8TyfLEWaze4GcERVDBu"
+    },
+    {
+      title: "3 Bed / 2 Bath, 918 sqft — Pet Friendly, Kits Walk, Kitsilano",
+      price: 4350, beds: "3 bd", baths: "2 ba", sqft: 918, neighborhood: "Kitsilano",
+      tags: ["Pet friendly"], verify: ["918 sqft is slightly under the 1,000 sqft target"], notes: "Parking: underground incl., EV stalls available, Storage: included + free bike storage",
+      image: "https://images.craigslist.org/00H0H_2oO7HpsixIp_09G0ew_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-modern-bed-bath-apartment-pet/bm7JybmkP5vmRqh65zDuV9"
+    },
+    {
+      title: "2 Bed / 2 Bath + Flex, 1,754 sqft — Coal Harbour Downtown, 23rd floor",
+      price: 5500, beds: "2 bd", baths: "2 ba", sqft: 1754, neighborhood: "Coal Harbour",
+      tags: ["Den/Flex", "Pet friendly"], verify: ["parking is 2 stalls at $562/mo EXTRA, not included"], notes: "At the very top of budget before parking add-on",
+      image: "https://images.craigslist.org/00J0J_3nucbYXGXgx_0kE0dL_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-beautiful-view-bed-bath-flex/4vgB7r7MRu21nrGTYUbm6U"
+    }
+  ],
+  good: [
+    {
+      title: "2 Bed / 2 Bath, 1,500 sqft — Residences on Georgia, Coal Harbour",
+      price: 3900, beds: "2 bd", baths: "2 ba", sqft: 1500, neighborhood: "Coal Harbour (34th floor, 1288 W Georgia)",
+      tags: [], verify: ["no den"], notes: "Parking: 2 side-by-side stalls included, Storage: 1 locker included",
+      image: "https://images.craigslist.org/00K0K_e0GYQGchFBj_0ak07K_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-coal-harbour-residences-on/a6PCa87prWoRvbDZjKF3iP"
+    },
+    {
+      title: "2 Bed / 1 Bath, 915 sqft — Vine building near Broadway, Kitsilano",
+      price: 4000, beds: "2 bd", baths: "2 ba", sqft: 915, neighborhood: "Kitsilano",
+      tags: ["Den"], verify: ["915 sqft, under 1,000 sqft target", "no dedicated storage"], notes: "Parking: 1 stall included",
+      image: "https://images.craigslist.org/01111_1Fx4rEYxjBT_0ak06S_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-rare-spacious-bed-bath/fR31M9cX8EcoobJShEpfHC"
+    },
+    {
+      title: "Coal Harbour 2 Bed Condo — The Melville, 1,173 sqft, pool & gym",
+      price: 4190, beds: "2 bd", baths: "1 ba", sqft: 1173, neighborhood: "Coal Harbour",
+      tags: ["Amenities"], verify: ["no parking mentioned", "only 1 bath, no den"], notes: "Unfurnished",
+      image: "https://images.craigslist.org/00e0e_l7Av23b1anf_0bi084_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-coal-harbour-2br-condo-the/1HgCrgFhwaxxGnCwy3A4C8"
+    },
+    {
+      title: "2 Bed + Den, 816 sqft — Pet Friendly, Arbutus Terrace, Kitsilano",
+      price: 3795, beds: "2 bd", baths: "2 ba", sqft: 816, neighborhood: "Kitsilano (2108 W 16th Ave)",
+      tags: ["Den", "Pet friendly"], verify: ["816 sqft, well under target", "no in-unit storage locker"], notes: "Parking: underground, EV-ready (inclusion unconfirmed)",
+      image: "https://images.craigslist.org/00J0J_flqWXGMNDZA_0x20m1_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-spacious-bed-den-pet-friendly/wQYjL6Yg6xN7gPVNLTk8GB"
+    },
+    {
+      title: "2 Bed / 2 Bath + Den, 840 sqft — The New Yorker, Kitsilano",
+      price: 3600, beds: "2 bd", baths: "2 ba", sqft: 840, neighborhood: "Kitsilano (2655 Cranberry Dr)",
+      tags: ["Den"], verify: ["840 sqft, under target", "no storage mentioned"], notes: "Confirmed unfurnished, Parking: 1 stall",
+      image: "https://images.craigslist.org/01616_4roXFMFsLbg_0CI0n0_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-bright-renovated-bdrm-bath/nzkiwhLCjcR9EraSfy5L4N"
+    },
+    {
+      title: "3 Bed / 2 Bath Laneway, 822 sqft — Point Grey, near UBC/Dunbar",
+      price: 3900, beds: "3 bd", baths: "2 ba", sqft: 822, neighborhood: "Point Grey",
+      tags: [], verify: ["822 sqft, under target", "street parking only"], notes: "",
+      image: "https://images.craigslist.org/01212_cXuGium0PVL_0h40mL_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-bed-bath-new-laneway-house/di8jq27kCfhQ36w5wv49Zk"
+    },
+    {
+      title: "Luxury Coal Harbour Living — 2 Bed + Den, 1,264 sqft, Stanley Park view",
+      price: 4500, beds: "2 bd", baths: "2 ba", sqft: 1264, neighborhood: "Coal Harbour (The Flatiron, 1277 Melville)",
+      tags: ["Den"], verify: ["furnished status contradictory in listing, worth asking directly"], notes: "Parking: 1 space",
+      image: "https://images.craigslist.org/00e0e_eRzfPgioAeQ_0uA0mM_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-luxury-coal-harbour-living/brQHjx7B5EJbtLWKPse2mK"
+    },
+    {
+      title: "3 Bed / 2 Bath Basement Suite — Dunbar, near Point Grey / UBC, avail. July 1",
+      price: 4500, beds: "3 bd", baths: "2 ba", sqft: null, neighborhood: "Dunbar (adjacent to Point Grey)",
+      tags: [], verify: ["sqft not stated", "street parking only, no storage", "furnished status ambiguous"], notes: "",
+      image: "https://images.craigslist.org/00m0m_9X5mSq9fZoO_0aL0eu_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-bed-bath-basement-suite/7HjYLeYFfniyMcj7GhfL6b"
+    },
+    {
+      title: "3 Bed House — Point Grey (W 14th Ave)",
+      price: 4200, beds: "3 bd", baths: "?", sqft: null, neighborhood: "Point Grey",
+      tags: [], verify: ["baths", "den", "sqft", "parking", "storage"], notes: "Photo not pulled yet, view on REW.ca",
+      image: null,
+      source: "REW.ca", url: "https://www.rew.ca/rentals/areas/point-grey-vancouver-bc"
+    },
+    {
+      title: "2 Bed Condo — 1277 Melville, Coal Harbour",
+      price: 4500, beds: "2 bd", baths: "?", sqft: null, neighborhood: "Coal Harbour",
+      tags: [], verify: ["den", "baths", "sqft", "parking", "storage"], notes: "Photo not pulled yet, view on REW.ca",
+      image: null,
+      source: "REW.ca", url: "https://www.rew.ca/rentals/areas/coal-harbour-vancouver-bc"
+    }
+  ],
+  furnished: [
+    {
+      title: "Stunning Waterview 3 Bed / 2 Bath + Den, 1,385 sqft — Bauhinia, Coal Harbour",
+      price: 5100, beds: "3 bd", baths: "2 ba", sqft: 1385, neighborhood: "Coal Harbour (535 Nicola St)",
+      tags: ["Den", "Furnished"], verify: [], notes: "Furnished: furniture available, Parking + storage included, No pets",
+      image: "https://images.craigslist.org/01515_kgTbHn8tSNy_0Cq0pC_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-stunning-waterview-beautiful/tznMYnemqUztGjPyH8PcSH"
+    },
+    {
+      title: "Coal Harbour Furnished 2 Bed / 2 Bath + Den, 1,200 sqft — Cielo",
+      price: 4500, beds: "2 bd", baths: "2 ba", sqft: 1200, neighborhood: "Coal Harbour (1205 W Hastings)",
+      tags: ["Den", "Furnished"], verify: [], notes: "Parking: 2 stalls, No storage locker",
+      image: "https://images.craigslist.org/01010_7wqxLK7fnc8_07K0ak_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-coal-harbour-furnished-bed/qrnVU8scngnSUgf13LXSU5"
+    },
+    {
+      title: "60th Floor — Furnished 2 Bed + Den, 855 sqft — Trump Tower, avail. Aug 1",
+      price: 4950, beds: "2 bd", baths: "2 ba", sqft: 855, neighborhood: "Coal Harbour (1151 W Georgia)",
+      tags: ["Den", "Furnished", "Aug 1 move-in", "Pet friendly"], verify: ["855 sqft, under target"], notes: "Parking: 1 stall included",
+      image: "https://images.craigslist.org/01717_6mNbijyBi3Y_0CI0pO_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-60th-floor-furnished-bedroom/bgAVPJwGFx6nHLW4cRnsUq"
+    },
+    {
+      title: "49th Floor — Furnished 2 Bed + Den, 874 sqft — Trump Tower, avail. Aug 1",
+      price: 4990, beds: "2 bd", baths: "2 ba", sqft: 874, neighborhood: "Coal Harbour (1151 W Georgia)",
+      tags: ["Den", "Furnished", "Aug 1 move-in", "Pet friendly"], verify: ["874 sqft, under target", "parking unclear"], notes: "",
+      image: "https://images.craigslist.org/00u0u_1lKl2PJH7lt_0ak06S_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-49th-floor-available-august/ifbvV6qMAKhBkUn3BdVWP5"
+    },
+    {
+      title: "Kitsilano 2 Bed + Den Townhouse, 938 sqft — semi-furnished",
+      price: 3700, beds: "2 bd", baths: "1 ba", sqft: 938, neighborhood: "Kitsilano",
+      tags: ["Den", "Semi-furnished"], verify: ["938 sqft, under target", "only 1 bath"], notes: "Parking: 2 underground stalls, Storage: bike only",
+      image: "https://images.craigslist.org/00w0w_456ytaTzSA4_0CI0t2_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-kitsilano-completely/eVUzyq4n4ei9HgbHFJrrsx"
+    },
+    {
+      title: "910 sqft — Semi-Furnished 2 Bed + Den, 2 Bath — Kitsilano",
+      price: 3680, beds: "2 bd", baths: "2 ba", sqft: 910, neighborhood: "Kitsilano (2288 W Broadway)",
+      tags: ["Den", "Semi-furnished"], verify: ["910 sqft, under target"], notes: "Parking: 1 space",
+      image: "https://images.craigslist.org/00R0R_eeMKdW7fOJQ_0ww0oo_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-910-sf-bright-corner-semi/k9vZKSLHeNSLMjtX5jtrnH"
+    },
+    {
+      title: "3 Bed / 2 Bath + Den, 1,071 sqft — Partially Furnished, The Platinum, Kerrisdale",
+      price: 3500, beds: "3 bd", baths: "2 ba", sqft: 1071, neighborhood: "Kerrisdale (near Point Grey)",
+      tags: ["Den", "Partially furnished"], verify: ["storage is a small locked owner's room, not real tenant storage"], notes: "Parking: 2 stalls",
+      image: "https://images.craigslist.org/00F0F_2eYcpn2fFDj_0CI0t2_600x450.jpg",
+      source: "Craigslist", url: "https://www.craigslist.org/view/d/vancouver-2brden2ba-partial-furnished/mEQdvAVuqbPpDEhtCerNS4"
+    }
+  ]
+};
+
+function photoHTML(item) {
+  if (!item.image) {
+    return '<div class="card-photo-wrap no-photo">No photo pulled yet</div>';
+  }
+  return '<a href="' + item.url + '" target="_blank" rel="noopener" class="card-photo-wrap">' +
+    '<img src="' + item.image + '" alt="" loading="lazy" ' +
+    'onerror="this.parentElement.classList.add(\'no-photo\'); this.remove(); this.parentElement.textContent=\'Photo unavailable\';">' +
+    '</a>';
+}
+
+function cardHTML(item, tierClass, tierLabel) {
+  const tagsHtml = item.tags.map(function(t) {
+    let cls = "tag";
+    if (t.toLowerCase().indexOf("pet") !== -1) cls += " pet";
+    else if (t.toLowerCase().indexOf("den") !== -1 || t.toLowerCase().indexOf("flex") !== -1) cls += " den";
+    else if (t.toLowerCase().indexOf("furnish") !== -1) cls += " warn";
+    return '<span class="' + cls + '">' + t + '</span>';
+  }).join("");
+  const verifyHtml = (item.verify || []).map(function(v) {
+    return '<span class="tag verify">' + v + '</span>';
+  }).join("");
+  const specs = item.beds + " &middot; " + item.baths + (item.sqft ? " &middot; " + item.sqft.toLocaleString() + " sqft" : "");
+  const tierBadge = tierLabel ? '<span class="tier-badge ' + (tierClass === 'tier-top' ? 'top' : 'good') + '">' + tierLabel + '</span>' : "";
+  const notesHtml = item.notes ? " &middot; " + item.notes : "";
+  return '<div class="card ' + tierClass + '">' +
+    photoHTML(item) +
+    '<div class="card-body">' +
+      '<div class="card-top"><div class="price">$' + item.price.toLocaleString() + '/mo</div>' + tierBadge + '</div>' +
+      '<div class="card-title"><a href="' + item.url + '" target="_blank" rel="noopener">' + item.title + '</a></div>' +
+      '<div class="specs">' + specs + '</div>' +
+      '<div class="addr">' + item.neighborhood + notesHtml + '</div>' +
+      '<div class="tags">' + tagsHtml + verifyHtml + '</div>' +
+      '<div class="card-footer"><span class="source-tag">' + item.source + '</span></div>' +
+    '</div>' +
+  '</div>';
+}
+
+function render() {
+  document.getElementById("grid-top").innerHTML = listings.top.map(function(i) { return cardHTML(i, "tier-top", "Top pick"); }).join("");
+  document.getElementById("grid-good").innerHTML = listings.good.map(function(i) { return cardHTML(i, "", ""); }).join("");
+  document.getElementById("grid-furnished").innerHTML = listings.furnished.map(function(i) { return cardHTML(i, "", ""); }).join("");
+  document.getElementById("count-top").textContent = listings.top.length;
+  document.getElementById("count-good").textContent = listings.good.length;
+  document.getElementById("furnished-summary").textContent =
+    "Furnished / partially furnished (doesn't meet unfurnished, shown in case it's negotiable) - " + listings.furnished.length;
+}
+
+render();
+</script>
+</body>
+</html>
